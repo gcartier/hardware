@@ -419,10 +419,6 @@ NotifyFrameNeeded()
     };
     NSOpenGLPixelFormat* pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attribs] autorelease];
     mContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
-    GLint swapInt = 0;
-    [mContext setValues:&swapInt forParameter:NSOpenGLCPSwapInterval];
-    GLint opaque = 1;
-    [mContext setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
     [mContext makeCurrentContext];
     [self _initGL];
     [[NSNotificationCenter defaultCenter] addObserver:self
