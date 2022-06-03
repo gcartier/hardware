@@ -220,7 +220,7 @@ DecodeCallback(void* decompressionOutputRefCon,
         printf("333\n");
         CGLError err = CGLTexImageIOSurface2D([mContext CGLContextObj],
                                               GL_TEXTURE_RECTANGLE_ARB, GL_RGB, width, height,
-                                              GL_YCBCR_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, mSurface, 0);
+                                              GL_RGB_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, mSurface, 0);
 
         printf("444 %d\n", err);
         if (err != kCGLNoError) {
@@ -414,7 +414,7 @@ NotifyFrameNeeded()
     NSOpenGLPixelFormatAttribute attribs[] = {
         NSOpenGLPFAAccelerated,
         NSOpenGLPFADoubleBuffer,
-        // NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
         (NSOpenGLPixelFormatAttribute)0
     };
     NSOpenGLPixelFormat* pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attribs] autorelease];
@@ -514,7 +514,7 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 
     CGLError err = CGLTexImageIOSurface2D([mContext CGLContextObj],
                                           GL_TEXTURE_RECTANGLE_ARB, GL_RGB, width, height,
-                                          GL_YCBCR_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, surface, 0);
+                                          GL_RGB_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, surface, 0);
 
     if (err != kCGLNoError) {
         printf("GL error=%d\n", (int)err);
@@ -564,21 +564,22 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 {
     // Create and compile our GLSL program from the shaders.
     mProgramID = CompileShaders(
-      "#version 120\n"
+      "#version 150\n"
       "// Input vertex data, different for all executions of this shader.\n"
-      "attribute vec2 aPos;\n"
-      "varying vec2 vPos;\n"
+      "vec2 aPos;\n"
+      "out vec2 vPos;\n"
       "void main(){\n"
       "  vPos = aPos;\n"
       "  gl_Position = vec4(aPos.x * 2.0 - 1.0, 1.0 - aPos.y * 2.0, 0.0, 1.0);\n"
       "}\n",
   
-      "#version 120\n"
-      "varying vec2 vPos;\n"
+      "#version 150\n"
+      "in vec2 vPos;\n"
+      "out vec4 fragColor;\n"
       "uniform sampler2DRect uSampler;\n"
       "void main()\n"
       "{\n"
-      "  gl_FragColor = texture2DRect(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
+      "  fragColor = vec4(1,1,0,1);\n" // texture(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
       "}\n");
 
     // Create a texture
