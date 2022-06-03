@@ -1,9 +1,10 @@
 /*
- * gcc -framework CoreMedia -framework CoreVideo -framework IOSurface -framework Cocoa -framework OpenGL -framework VideoToolbox -lobjc decode.m -o decode
+ * gcc -framework CoreMedia -framework CoreVideo -framework IOSurface -framework Cocoa -framework OpenGL -framework VideoToolbox -I/Users/cartier/Devel/app/glew/include -L/Users/cartier/Devel/app/glew/lib -lGLEW -lobjc decode.m -o decode
  */
 
 #include <stdio.h>
 #include <assert.h>
+#include <GL/glew.h>
 #include <OpenGL/gl.h>
 
 #import <Cocoa/Cocoa.h>
@@ -61,6 +62,7 @@ H264Sample* LoadVideoData()
     GLuint mTexture;
     GLuint mTextureUniform;
     GLuint mPosAttribute;
+    GLuint mArraybuffer;
     GLuint mVertexbuffer;
     bool mStarted;
 }
@@ -405,6 +407,14 @@ NotifyFrameNeeded()
 }
 
 
+void glCheckError(int tag)
+{
+    GLenum code = glGetError();
+    if (code != GL_NO_ERROR)
+        printf("***** gl error %d at %d\n", code, tag);
+}
+
+
 @implementation TestView
 
 - (id)initWithFrame:(NSRect)aFrame
@@ -525,6 +535,7 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 
 - (void)drawme
 {
+printf("drawme\n");
     [mContext setView:self];
     [mContext makeCurrentContext];
 
@@ -536,57 +547,62 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
     glClearColor(0.0, 1.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glCheckError(1);
     glUseProgram(mProgramID);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mTexture);
-    glUniform1i(mTextureUniform, 0);
+    glCheckError(2);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mTexture);
+    // glUniform1i(mTextureUniform, 0);
 
-    glEnableVertexAttribArray(mPosAttribute);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexbuffer);
-    glVertexAttribPointer(
-                          mPosAttribute, // The attribute we want to configure
-                          2,             // size
-                          GL_FLOAT,      // type
-                          GL_FALSE,      // normalized?
-                          0,             // stride
-                          (void*)0       // array buffer offset
-                          );
 
+    glCheckError(3);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // 4 indices starting at 0 -> 2 triangles
-
-    glDisableVertexAttribArray(mPosAttribute);
+    glCheckError(4);
+    
+    glCheckError(9);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     [mContext flushBuffer];
 }
 
 - (void)_initGL
 {
+    glewExperimental=GL_TRUE;
+    glewInit();
+    // this is weird there is an error 1280 right after initing glew
+    // as a quick hack call glGetError to flush error
+    glGetError();
+    glCheckError(50);
+    
     // Create and compile our GLSL program from the shaders.
     mProgramID = CompileShaders(
       "#version 150\n"
       "// Input vertex data, different for all executions of this shader.\n"
-      "vec2 aPos;\n"
-      "out vec2 vPos;\n"
+      "in vec2 aPos;\n"
+      // "out vec2 vPos;\n"
       "void main(){\n"
-      "  vPos = aPos;\n"
+      // "  vPos = aPos;\n"
       "  gl_Position = vec4(aPos.x * 2.0 - 1.0, 1.0 - aPos.y * 2.0, 0.0, 1.0);\n"
+      // "  gl_Position = vec4(1.0, 1.0, 1.0, 1.0);\n"
       "}\n",
   
       "#version 150\n"
-      "in vec2 vPos;\n"
+      // "in vec2 vPos;\n"
       "out vec4 fragColor;\n"
-      "uniform sampler2DRect uSampler;\n"
+      // "uniform sampler2DRect uSampler;\n"
       "void main()\n"
       "{\n"
-      "  fragColor = vec4(1,1,0,1);\n" // texture(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
+      "  fragColor = vec4(1,0,0,1);\n" // texture(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
       "}\n");
 
     // Create a texture
     glGenTextures(1, &mTexture);
-    mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
+    // mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
 
     // Get a handle for our buffers
+    glCheckError(100);
     mPosAttribute = glGetAttribLocation(mProgramID, "aPos");
 
     static const GLfloat g_vertex_buffer_data[] = {
@@ -595,10 +611,34 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
        0.0f,  1.0f,
        1.0f,  1.0f,
     };
+    
+    glCheckError(101);
+    glGenVertexArrays(1, &mArraybuffer);
+    glCheckError(102);
 
+    /* Bind our Vertex Array Object as the current used object */
+    glBindVertexArray(mArraybuffer);
+
+    glCheckError(10);
     glGenBuffers(1, &mVertexbuffer);
+    glCheckError(11);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexbuffer);
+    glCheckError(12);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glCheckError(13);
+    printf("attrib %d\n", mPosAttribute);
+    glEnableVertexAttribArray(mPosAttribute);
+    glCheckError(14);
+    glVertexAttribPointer(mPosAttribute, // The attribute we want to configure
+                          2,             // size
+                          GL_FLOAT,      // type
+                          GL_FALSE,      // normalized?
+                          0,             // stride
+                          (void*)0       // array buffer offset
+                          );
+    glCheckError(15);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glCheckError(19);
 }
 
 - (void)_cleanupGL
