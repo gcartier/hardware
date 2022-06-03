@@ -202,7 +202,7 @@ DecodeCallback(void* decompressionOutputRefCon,
     else {
         printf("got image!!!\n");
         CFRetain(image);
-        
+        /*
         printf("111\n");
         mSurface = CVPixelBufferGetIOSurface(image);
         CFRetain(mSurface);
@@ -235,7 +235,7 @@ DecodeCallback(void* decompressionOutputRefCon,
         glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
         printf("after  %02x%02x%02x%02x\n", data[0], data[1], data[2], data[3]);
         printf("555\n");
-        
+        */
         dispatch_async(mQueue, ^{
             OutputFrame(image);
             if (image) {
@@ -250,10 +250,9 @@ void
 OutputFrame(CVPixelBufferRef aImage)
 {
     IOSurfaceRef surface = CVPixelBufferGetIOSurface(aImage);
-
-    printf("Returning frame for display\n");
-        CFRetain(surface);
-        IOSurfaceIncrementUseCount(surface);
+    CFRetain(surface);
+    IOSurfaceIncrementUseCount(surface);
+    
     [mView output:surface];
 }
 
@@ -381,7 +380,7 @@ DoDecode(H264Sample* aSample)
                                            decodeFlags,
                                            aSample,
                                            &infoFlags);
-    if (rv != noErr) { // BAZOO && !(infoFlags & kVTDecodeInfo_FrameDropped)) {
+    if (rv != noErr) {
         printf("decode error %d\n", rv);
         return false;
     }
@@ -509,13 +508,15 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 - (void)output:(IOSurfaceRef)surface
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        printf("Processing output\n");
-        [self upload:surface];
+        printf("output\n");
+        [self bind:surface];
     });
 }
 
-- (void)upload:(IOSurfaceRef)surface
+- (void)bind:(IOSurfaceRef)surface
 {
+    printf("bind\n");
+    
     GLsizei width = (GLsizei)IOSurfaceGetWidth(surface);
     GLsizei height = (GLsizei)IOSurfaceGetHeight(surface);
 
@@ -527,7 +528,7 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
                                           GL_RGB_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, surface, 0);
 
     if (err != kCGLNoError) {
-        printf("GL error=%d\n", (int)err);
+        printf("gl error %d\n", (int)err);
         return;
     }
     [self drawme];
@@ -535,7 +536,6 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 
 - (void)drawme
 {
-printf("drawme\n");
     [mContext setView:self];
     [mContext makeCurrentContext];
 
@@ -547,21 +547,14 @@ printf("drawme\n");
     glClearColor(0.0, 1.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glCheckError(1);
     glUseProgram(mProgramID);
 
-    glCheckError(2);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mTexture);
-    // glUniform1i(mTextureUniform, 0);
+    glUniform1i(mTextureUniform, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, mVertexbuffer);
 
-    glCheckError(3);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // 4 indices starting at 0 -> 2 triangles
-    glCheckError(4);
-    
-    glCheckError(9);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     [mContext flushBuffer];
@@ -574,7 +567,6 @@ printf("drawme\n");
     // this is weird there is an error 1280 right after initing glew
     // as a quick hack call glGetError to flush error
     glGetError();
-    glCheckError(50);
     
     // Create and compile our GLSL program from the shaders.
     mProgramID = CompileShaders(
@@ -601,7 +593,6 @@ printf("drawme\n");
     mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
 
     // Get a handle for our buffers
-    glCheckError(100);
     mPosAttribute = glGetAttribLocation(mProgramID, "aPos");
 
     static const GLfloat g_vertex_buffer_data[] = {
@@ -611,23 +602,15 @@ printf("drawme\n");
        1.0f,  1.0f,
     };
     
-    glCheckError(101);
     glGenVertexArrays(1, &mArraybuffer);
-    glCheckError(102);
 
     /* Bind our Vertex Array Object as the current used object */
     glBindVertexArray(mArraybuffer);
 
-    glCheckError(10);
     glGenBuffers(1, &mVertexbuffer);
-    glCheckError(11);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexbuffer);
-    glCheckError(12);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-    glCheckError(13);
-    printf("attrib %d\n", mPosAttribute);
     glEnableVertexAttribArray(mPosAttribute);
-    glCheckError(14);
     glVertexAttribPointer(mPosAttribute, // The attribute we want to configure
                           2,             // size
                           GL_FLOAT,      // type
@@ -635,9 +618,7 @@ printf("drawme\n");
                           0,             // stride
                           (void*)0       // array buffer offset
                           );
-    glCheckError(15);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glCheckError(19);
 }
 
 - (void)_cleanupGL
