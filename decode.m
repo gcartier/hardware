@@ -581,25 +581,24 @@ printf("drawme\n");
       "#version 150\n"
       "// Input vertex data, different for all executions of this shader.\n"
       "in vec2 aPos;\n"
-      // "out vec2 vPos;\n"
+      "out vec2 vPos;\n"
       "void main(){\n"
-      // "  vPos = aPos;\n"
+      "  vPos = aPos;\n"
       "  gl_Position = vec4(aPos.x * 2.0 - 1.0, 1.0 - aPos.y * 2.0, 0.0, 1.0);\n"
-      // "  gl_Position = vec4(1.0, 1.0, 1.0, 1.0);\n"
       "}\n",
   
       "#version 150\n"
-      // "in vec2 vPos;\n"
+      "in vec2 vPos;\n"
       "out vec4 fragColor;\n"
-      // "uniform sampler2DRect uSampler;\n"
+      "uniform sampler2DRect uSampler;\n"
       "void main()\n"
       "{\n"
-      "  fragColor = vec4(1,0,0,1);\n" // texture(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
+      "  fragColor = texture(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
       "}\n");
 
     // Create a texture
     glGenTextures(1, &mTexture);
-    // mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
+    mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
 
     // Get a handle for our buffers
     glCheckError(100);
