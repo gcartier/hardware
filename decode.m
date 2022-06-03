@@ -421,10 +421,7 @@ NotifyFrameNeeded()
     mContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
     [mContext makeCurrentContext];
     [self _initGL];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(_surfaceNeedsUpdate:)
-                                                 name:NSViewGlobalFrameDidChangeNotification
-                                               object:self];
+    
     CreateDecoder(self, mContext, 1120, 626);
     mStarted = false;
     
