@@ -219,17 +219,17 @@ DecodeCallback(void* decompressionOutputRefCon,
         CGLError err = CGLTexImageIOSurface2D([mContext CGLContextObj],
                                               GL_TEXTURE_RECTANGLE_ARB, GL_RGB, width, height,
                                               GL_YCBCR_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, mSurface, 0);
-        
-        char* data = (char*) calloc(width * height * 4, 1);
-        printf("before %02x%02x%02x%02x\n", data[0], data[1], data[2], data[3]);
-        glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
-        printf("after  %02x%02x%02x%02x\n", data[0], data[1], data[2], data[3]);
 
         printf("444 %d\n", err);
         if (err != kCGLNoError) {
             printf("GL error=%d\n", (int)err);
             return;
         }
+        
+        char* data = (char*) calloc(width * height * 4, 1);
+        printf("before %02x%02x%02x%02x\n", data[0], data[1], data[2], data[3]);
+        glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+        printf("after  %02x%02x%02x%02x\n", data[0], data[1], data[2], data[3]);
         printf("555\n");
         
         dispatch_async(mQueue, ^{
@@ -411,6 +411,7 @@ NotifyFrameNeeded()
     NSOpenGLPixelFormatAttribute attribs[] = {
         NSOpenGLPFAAccelerated,
         NSOpenGLPFADoubleBuffer,
+        // NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
         (NSOpenGLPixelFormatAttribute)0
     };
     NSOpenGLPixelFormat* pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attribs] autorelease];
@@ -649,7 +650,7 @@ int main (int argc, char **argv)
   [NSApplication sharedApplication];
   [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
-  int style = NSTitledWindowMask | NSClosableWindowMask | NSResizableWindowMask | NSMiniaturizableWindowMask;
+  int style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
   NSRect contentRect = NSMakeRect(200, 200, 1120, 626);
   NSWindow* window = [[NSWindow alloc] initWithContentRect:contentRect
                                        styleMask:style
