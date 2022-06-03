@@ -140,36 +140,36 @@ CreateDecoderSpecification()
 CFDictionaryRef
 CreateOutputConfiguration()
 {
-  SInt32 PixelFormatTypeValue = kCVPixelFormatType_422YpCbCr8;
-  CFNumberRef PixelFormatTypeNumber =
-    CFNumberCreate(kCFAllocatorDefault,
-                   kCFNumberSInt32Type,
-                   &PixelFormatTypeValue);
+    SInt32 PixelFormatTypeValue = kCVPixelFormatType_422YpCbCr8;
+    CFNumberRef PixelFormatTypeNumber =
+      CFNumberCreate(kCFAllocatorDefault,
+                     kCFNumberSInt32Type,
+                     &PixelFormatTypeValue);
 
-  const void* IOSurfaceKeys[] = { };
-  const void* IOSurfaceValues[] = { };
+    const void* IOSurfaceKeys[] = { };
+    const void* IOSurfaceValues[] = { };
 
-  CFDictionaryRef IOSurfaceProperties =
-    CFDictionaryCreate(kCFAllocatorDefault,
-                       IOSurfaceKeys,
-                       IOSurfaceValues,
-                       0,
-                       &kCFTypeDictionaryKeyCallBacks,
-                       &kCFTypeDictionaryValueCallBacks);
+    CFDictionaryRef IOSurfaceProperties =
+      CFDictionaryCreate(kCFAllocatorDefault,
+                         IOSurfaceKeys,
+                         IOSurfaceValues,
+                         0,
+                         &kCFTypeDictionaryKeyCallBacks,
+                         &kCFTypeDictionaryValueCallBacks);
 
-  const void* outputKeys[] = { kCVPixelBufferIOSurfacePropertiesKey,
-                               kCVPixelBufferPixelFormatTypeKey,
-                               kCVPixelBufferOpenGLCompatibilityKey };
-  const void* outputValues[] = { IOSurfaceProperties,
-                                 PixelFormatTypeNumber,
-                                 kCFBooleanTrue };
+    const void* outputKeys[] = { kCVPixelBufferIOSurfacePropertiesKey,
+                                 kCVPixelBufferPixelFormatTypeKey,
+                                 kCVPixelBufferOpenGLCompatibilityKey };
+    const void* outputValues[] = { IOSurfaceProperties,
+                                   PixelFormatTypeNumber,
+                                   kCFBooleanTrue };
 
-  return CFDictionaryCreate(kCFAllocatorDefault,
-                            outputKeys,
-                            outputValues,
-                            3,
-                            &kCFTypeDictionaryKeyCallBacks,
-                            &kCFTypeDictionaryValueCallBacks);
+    return CFDictionaryCreate(kCFAllocatorDefault,
+                              outputKeys,
+                              outputValues,
+                              3,
+                              &kCFTypeDictionaryKeyCallBacks,
+                              &kCFTypeDictionaryValueCallBacks);
 }
 
 
@@ -569,53 +569,53 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 
 - (void)_initGL
 {
-  // Create and compile our GLSL program from the shaders.
-  mProgramID = CompileShaders(
-    "#version 120\n"
-    "// Input vertex data, different for all executions of this shader.\n"
-    "attribute vec2 aPos;\n"
-    "varying vec2 vPos;\n"
-    "void main(){\n"
-    "  vPos = aPos;\n"
-    "  gl_Position = vec4(aPos.x * 2.0 - 1.0, 1.0 - aPos.y * 2.0, 0.0, 1.0);\n"
-    "}\n",
+    // Create and compile our GLSL program from the shaders.
+    mProgramID = CompileShaders(
+      "#version 120\n"
+      "// Input vertex data, different for all executions of this shader.\n"
+      "attribute vec2 aPos;\n"
+      "varying vec2 vPos;\n"
+      "void main(){\n"
+      "  vPos = aPos;\n"
+      "  gl_Position = vec4(aPos.x * 2.0 - 1.0, 1.0 - aPos.y * 2.0, 0.0, 1.0);\n"
+      "}\n",
+  
+      "#version 120\n"
+      "varying vec2 vPos;\n"
+      "uniform sampler2DRect uSampler;\n"
+      "void main()\n"
+      "{\n"
+      "  gl_FragColor = texture2DRect(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
+      "}\n");
 
-    "#version 120\n"
-    "varying vec2 vPos;\n"
-    "uniform sampler2DRect uSampler;\n"
-    "void main()\n"
-    "{\n"
-    "  gl_FragColor = texture2DRect(uSampler, vPos * vec2(1120, 626));\n" // <-- ATTENTION I HARDCODED THE TEXTURE SIZE HERE SORRY ABOUT THAT
-    "}\n");
+    // Create a texture
+    glGenTextures(1, &mTexture);
+    mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
 
-  // Create a texture
-  glGenTextures(1, &mTexture);
-  mTextureUniform = glGetUniformLocation(mProgramID, "uSampler");
+    // Get a handle for our buffers
+    mPosAttribute = glGetAttribLocation(mProgramID, "aPos");
 
-  // Get a handle for our buffers
-  mPosAttribute = glGetAttribLocation(mProgramID, "aPos");
+    static const GLfloat g_vertex_buffer_data[] = {
+       0.0f,  0.0f,
+       1.0f,  0.0f,
+       0.0f,  1.0f,
+       1.0f,  1.0f,
+    };
 
-  static const GLfloat g_vertex_buffer_data[] = {
-     0.0f,  0.0f,
-     1.0f,  0.0f,
-     0.0f,  1.0f,
-     1.0f,  1.0f,
-  };
-
-  glGenBuffers(1, &mVertexbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, mVertexbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glGenBuffers(1, &mVertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, mVertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 }
 
 - (void)_cleanupGL
 {
-  glDeleteTextures(1, &mTexture);
-  glDeleteBuffers(1, &mVertexbuffer);
+    glDeleteTextures(1, &mTexture);
+    glDeleteBuffers(1, &mVertexbuffer);
 }
 
 - (void)_surfaceNeedsUpdate:(NSNotification*)notification
 {
-  [mContext update];
+    [mContext update];
 }
 
 - (void)drawRect:(NSRect)aRect
@@ -629,7 +629,7 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 
 - (BOOL)wantsBestResolutionOpenGLSurface
 {
-  return YES;
+    return YES;
 }
 
 @end
@@ -641,35 +641,35 @@ CompileShaders(const char* vertexShader, const char* fragmentShader)
 @implementation TerminateOnClose
 - (void)windowWillClose:(NSNotification*)notification
 {
-  [NSApp terminate:self];
+    [NSApp terminate:self];
 }
 @end
 
 
 int main (int argc, char **argv)
 {
-  NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-  [NSApplication sharedApplication];
-  [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [NSApplication sharedApplication];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
-  int style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
-  NSRect contentRect = NSMakeRect(200, 200, 1120, 626);
-  NSWindow* window = [[NSWindow alloc] initWithContentRect:contentRect
-                                       styleMask:style
-                                         backing:NSBackingStoreBuffered
-                                           defer:NO];
+    int style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
+    NSRect contentRect = NSMakeRect(200, 200, 1120, 626);
+    NSWindow* window = [[NSWindow alloc] initWithContentRect:contentRect
+                                         styleMask:style
+                                           backing:NSBackingStoreBuffered
+                                             defer:NO];
 
-  NSView* view = [[TestView alloc] initWithFrame:NSMakeRect(0, 0, contentRect.size.width, contentRect.size.height)];
+    NSView* view = [[TestView alloc] initWithFrame:NSMakeRect(0, 0, contentRect.size.width, contentRect.size.height)];
 
-  [window setContentView:view];
-  [window setDelegate:[[TerminateOnClose alloc] autorelease]];
-  [NSApp activateIgnoringOtherApps:YES];
-  [window makeKeyAndOrderFront:window];
+    [window setContentView:view];
+    [window setDelegate:[[TerminateOnClose alloc] autorelease]];
+    [NSApp activateIgnoringOtherApps:YES];
+    [window makeKeyAndOrderFront:window];
 
-  [NSApp run];
+    [NSApp run];
 
-  [pool release];
+    [pool release];
   
-  return 0;
+    return 0;
 }
