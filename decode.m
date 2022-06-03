@@ -56,6 +56,7 @@ H264Sample* LoadVideoData()
 @interface TestView: NSView
 {
     NSOpenGLContext* mContext;
+    NSOpenGLContext* mContext32;
     GLuint mProgramID;
     GLuint mTexture;
     GLuint mTextureUniform;
@@ -74,6 +75,7 @@ void OutputFrame(CVPixelBufferRef aImage);
 
 TestView* mView;
 NSOpenGLContext* mContext;
+NSOpenGLContext* mContext32;
 int32_t mWidth;
 int32_t mHeight;
 CMVideoFormatDescriptionRef mFormat;
@@ -407,7 +409,8 @@ NotifyFrameNeeded()
 
 - (id)initWithFrame:(NSRect)aFrame
 {
-  if (self = [super initWithFrame:aFrame]) {
+    [super initWithFrame:aFrame];
+    
     NSOpenGLPixelFormatAttribute attribs[] = {
         NSOpenGLPFAAccelerated,
         NSOpenGLPFADoubleBuffer,
@@ -428,76 +431,76 @@ NotifyFrameNeeded()
                                                object:self];
     CreateDecoder(self, mContext, 1120, 626);
     mStarted = false;
-  }
-  return self;
+    
+    return self;
 }
 
 - (void)dealloc
 {
-  [self _cleanupGL];
-  [mContext release];
-  [super dealloc];
-  DestroyDecoder();
+    [self _cleanupGL];
+    [mContext release];
+    [super dealloc];
+    DestroyDecoder();
 }
 
 static GLuint
 CompileShaders(const char* vertexShader, const char* fragmentShader)
 {
-  // Create the shaders
-  GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-  GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    // Create the shaders
+    GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
-  GLint result = GL_FALSE;
-  int infoLogLength;
+    GLint result = GL_FALSE;
+    int infoLogLength;
 
-  // Compile Vertex Shader
-  glShaderSource(vertexShaderID, 1, &vertexShader , NULL);
-  glCompileShader(vertexShaderID);
+    // Compile Vertex Shader
+    glShaderSource(vertexShaderID, 1, &vertexShader , NULL);
+    glCompileShader(vertexShaderID);
 
-  // Check Vertex Shader
-  glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &result);
-  glGetShaderiv(vertexShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
-  if (infoLogLength > 0) {
-    char* vertexShaderErrorMessage = (char*) malloc(infoLogLength+1);
-    glGetShaderInfoLog(vertexShaderID, infoLogLength, NULL, vertexShaderErrorMessage);
-    printf("%s\n", vertexShaderErrorMessage);
-    free(vertexShaderErrorMessage);
-  }
+    // Check Vertex Shader
+    glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &result);
+    glGetShaderiv(vertexShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
+    if (infoLogLength > 0) {
+      char* vertexShaderErrorMessage = (char*) malloc(infoLogLength+1);
+      glGetShaderInfoLog(vertexShaderID, infoLogLength, NULL, vertexShaderErrorMessage);
+      printf("%s\n", vertexShaderErrorMessage);
+      free(vertexShaderErrorMessage);
+    }
 
-  // Compile Fragment Shader
-  glShaderSource(fragmentShaderID, 1, &fragmentShader , NULL);
-  glCompileShader(fragmentShaderID);
+    // Compile Fragment Shader
+    glShaderSource(fragmentShaderID, 1, &fragmentShader , NULL);
+    glCompileShader(fragmentShaderID);
 
-  // Check Fragment Shader
-  glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &result);
-  glGetShaderiv(fragmentShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
-  if (infoLogLength > 0) {
-    char* fragmentShaderErrorMessage = (char*) malloc(infoLogLength+1);
-    glGetShaderInfoLog(fragmentShaderID, infoLogLength, NULL, fragmentShaderErrorMessage);
-    printf("%s\n", fragmentShaderErrorMessage);
-    free(fragmentShaderErrorMessage);
-  }
+    // Check Fragment Shader
+    glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &result);
+    glGetShaderiv(fragmentShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
+    if (infoLogLength > 0) {
+      char* fragmentShaderErrorMessage = (char*) malloc(infoLogLength+1);
+      glGetShaderInfoLog(fragmentShaderID, infoLogLength, NULL, fragmentShaderErrorMessage);
+      printf("%s\n", fragmentShaderErrorMessage);
+      free(fragmentShaderErrorMessage);
+    }
 
-  // Link the program
-  GLuint programID = glCreateProgram();
-  glAttachShader(programID, vertexShaderID);
-  glAttachShader(programID, fragmentShaderID);
-  glLinkProgram(programID);
+    // Link the program
+    GLuint programID = glCreateProgram();
+    glAttachShader(programID, vertexShaderID);
+    glAttachShader(programID, fragmentShaderID);
+    glLinkProgram(programID);
 
-  // Check the program
-  glGetProgramiv(programID, GL_LINK_STATUS, &result);
-  glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &infoLogLength);
-  if (infoLogLength > 0) {
-    char* programErrorMessage = (char*) malloc(infoLogLength+1);
-    glGetProgramInfoLog(programID, infoLogLength, NULL, programErrorMessage);
-    printf("%s\n", programErrorMessage);
-    free(programErrorMessage);
-  }
+    // Check the program
+    glGetProgramiv(programID, GL_LINK_STATUS, &result);
+    glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &infoLogLength);
+    if (infoLogLength > 0) {
+      char* programErrorMessage = (char*) malloc(infoLogLength+1);
+      glGetProgramInfoLog(programID, infoLogLength, NULL, programErrorMessage);
+      printf("%s\n", programErrorMessage);
+      free(programErrorMessage);
+    }
 
-  glDeleteShader(vertexShaderID);
-  glDeleteShader(fragmentShaderID);
+    glDeleteShader(vertexShaderID);
+    glDeleteShader(fragmentShaderID);
 
-  return programID;
+    return programID;
 }
 
 - (void)output:(IOSurfaceRef)surface
